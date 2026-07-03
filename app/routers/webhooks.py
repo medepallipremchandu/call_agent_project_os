@@ -169,10 +169,14 @@ async def voice_and_gather(call_id: uuid.UUID, request: Request, db: AsyncSessio
         if consent == "yes":
             call.consent_status = "granted"
             await calls_service.transition(db, call, CallStatus.CONVERSATION, "CONSENT_GRANTED")
-            opening = await conversation.main_turn(script=script, history=await _history(db, call), callee_speech="")
-            await _append_turn(db, call, "ai", opening.get("ai_response", ""))
+            # Templated, not an LLM call — the caller is already waiting on the
+            # consent_turn() round trip above; a second LLM call back-to-back
+            # here would double the latency of this one turn for no benefit,
+            # since the objective is fixed, tenant-authored text anyway.
+            opening_line = f"Great, thank you. {script.objective}"
+            await _append_turn(db, call, "ai", opening_line)
             await db.commit()
-            return Response(content=_say_and_gather(action_url, opening.get("ai_response", "")), media_type="application/xml")
+            return Response(content=_say_and_gather(action_url, opening_line), media_type="application/xml")
 
         if consent == "no":
             call.consent_status = "denied"

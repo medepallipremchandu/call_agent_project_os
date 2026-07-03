@@ -46,6 +46,7 @@ class AzureOpenAiProvider(AiProvider):
                 {"role": "user", "content": user_content},
             ],
             temperature=0.3,
+            max_tokens=200,  # replies are spoken sentences, not essays — caps generation time per turn
             response_format={"type": "json_object"},
             timeout=30,
         )
@@ -73,6 +74,7 @@ class OpenAiProvider(AiProvider):
                 {"role": "user", "content": user_content},
             ],
             temperature=0.3,
+            max_tokens=200,  # replies are spoken sentences, not essays — caps generation time per turn
             response_format={"type": "json_object"},
             timeout=30,
         )

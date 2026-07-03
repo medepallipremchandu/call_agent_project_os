@@ -120,7 +120,10 @@ class CallEvent(Base):
 
 class ConversationTurn(Base):
     __tablename__ = "conversation_turns"
-    __table_args__ = (Index("ix_conversation_turns_call_id_turn_index", "call_id", "turn_index"),)
+    # Unique, not just indexed: a duplicate Twilio webhook delivery for the
+    # same turn must fail loudly (IntegrityError) rather than silently insert
+    # a second row for that turn — see _append_turn() in routers/webhooks.py.
+    __table_args__ = (UniqueConstraint("call_id", "turn_index", name="uq_conversation_turn_call_id_turn_index"),)
 
     id: Mapped[uuid.UUID] = _uuid_pk()
     call_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("calls.id"), nullable=False)
