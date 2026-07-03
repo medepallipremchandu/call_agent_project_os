@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Voice Call Agent Platform — Onboarding</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --border: #2a2e38; --text: #e6e8ec;
+    --muted: #9aa1ac; --accent: #5b8cff; --danger: #ff6b6b; --ok: #35d07f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .sub { color: var(--muted); margin-bottom: 28px; font-size: 14px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; margin-bottom: 24px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 14px 0 4px; }
+  input, select {
+    width: 100%; padding: 9px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: #0f1115; color: var(--text); font-size: 14px;
+  }
+  input:focus, select:focus { outline: 1px solid var(--accent); }
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+  button {
+    margin-top: 20px; background: var(--accent); color: #fff; border: none;
+    padding: 10px 18px; border-radius: 6px; font-size: 14px; cursor: pointer;
+  }
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .section-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 18px 0 6px; }
+  .result {
+    margin-top: 16px; border: 1px solid var(--ok); border-radius: 8px; padding: 14px;
+    background: rgba(53, 208, 127, 0.08); display: none;
+  }
+  .result.show { display: block; }
+  .result .key {
+    font-family: ui-monospace, monospace; font-size: 13px; word-break: break-all;
+    background: #0f1115; padding: 8px; border-radius: 6px; margin-top: 6px; user-select: all;
+  }
+  .warn { color: var(--danger); font-size: 12px; margin-top: 6px; }
+  .error { color: var(--danger); font-size: 13px; margin-top: 12px; display: none; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: #23262f; }
+  .copy-btn { margin-top: 8px; background: #23262f; padding: 6px 10px; font-size: 12px; }
+  .api-hint { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .api-hint.live { color: var(--ok); }
+  .endpoint { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
+  .endpoint-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .method { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; font-family: ui-monospace, monospace; }
+  .method.get { background: rgba(91,140,255,0.15); color: #7fa4ff; }
+  .method.post { background: rgba(53,208,127,0.15); color: var(--ok); }
+  .endpoint-path { font-family: ui-monospace, monospace; font-size: 13px; }
+  .endpoint-note { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  pre.curl {
+    background: #0f1115; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; font-size: 12px; overflow-x: auto; white-space: pre; margin: 0;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+  .endpoint .copy-btn { margin-top: 8px; }
+  .auth-note { display: inline-block; font-size: 11px; color: var(--muted); margin-left: auto; }
+  .bundle-btn { margin-top: 0; padding: 5px 10px; font-size: 12px; background: #23262f; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AI Voice Call Agent Platform</h1>
+  <div class="sub">Create an organization, pick a telephony + AI provider, and get an API key.</div>
+
+  <div class="card">
+    <h2>Create API</h2>
+    <form id="create-form">
+      <div class="row">
+        <div>
+          <label>Company name</label>
+          <input name="name" required placeholder="Acme Dental" />
+        </div>
+        <div>
+          <label>Email</label>
+          <input name="email" type="email" required placeholder="ops@acme.com" />
+        </div>
+      </div>
+
+      <div class="section-label">Telephony provider</div>
+      <label>Provider</label>
+      <select name="telephonyProvider" id="telephonyProvider">
+        <option value="twilio">Twilio</option>
+      </select>
+      <div id="telephony-fields">
+        <div class="row">
+          <div><label>Account SID</label><input name="tw_accountSid" required placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" /></div>
+          <div><label>Auth Token</label><input name="tw_authToken" required type="password" placeholder="Twilio auth token" /></div>
+        </div>
+        <label>From number (E.164)</label>
+        <input name="tw_fromNumber" required placeholder="+14155550123" />
+      </div>
+
+      <div class="section-label">AI provider</div>
+      <label>Provider</label>
+      <select name="aiProvider" id="aiProvider">
+        <option value="azure_openai">Azure OpenAI</option>
+        <option value="openai">OpenAI</option>
+      </select>
+
+      <div id="azure-fields">
+        <div class="row">
+          <div><label>Endpoint</label><input name="az_endpoint" placeholder="https://your-resource.cognitiveservices.azure.com" /></div>
+          <div><label>API Key</label><input name="az_apiKey" type="password" placeholder="Azure OpenAI key" /></div>
+        </div>
+        <div class="row">
+          <div><label>Deployment</label><input name="az_deployment" placeholder="gpt-4.1" /></div>
+          <div><label>API Version</label><input name="az_apiVersion" placeholder="2025-01-01-preview" value="2025-01-01-preview" /></div>
+        </div>
+      </div>
+
+      <div id="openai-fields" style="display:none">
+        <div class="row">
+          <div><label>API Key</label><input name="oa_apiKey" type="password" placeholder="sk-..." /></div>
+          <div><label>Model</label><input name="oa_model" placeholder="gpt-4o-mini" value="gpt-4o-mini" /></div>
+        </div>
+      </div>
+
+      <button type="submit" id="submit-btn">Create API</button>
+      <div class="error" id="form-error"></div>
+    </form>
+
+    <div class="result" id="result">
+      <div><strong>Organization created.</strong></div>
+      <div>API key (shown once — copy it now):</div>
+      <div class="key" id="api-key-value"></div>
+      <button type="button" class="copy-btn" id="copy-btn">Copy</button>
+      <div class="warn">This key will not be shown again. Store it securely.</div>
+      <div style="margin-top:10px"><a href="/console" id="open-console-link">Open Test Console for this organization &rarr;</a></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Organizations</h2>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Telephony</th><th>AI</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="org-rows"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>API Reference</h2>
+    <div class="api-hint" id="api-hint">
+      Create an organization above to auto-fill these curl examples with a real API key. Until then they show a placeholder.
+    </div>
+    <div id="endpoints"></div>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('create-form');
+const aiProviderSelect = document.getElementById('aiProvider');
+const azureFields = document.getElementById('azure-fields');
+const openaiFields = document.getElementById('openai-fields');
+const resultBox = document.getElementById('result');
+const apiKeyValue = document.getElementById('api-key-value');
+const formError = document.getElementById('form-error');
+const submitBtn = document.getElementById('submit-btn');
+
+aiProviderSelect.addEventListener('change', () => {
+  const isAzure = aiProviderSelect.value === 'azure_openai';
+  azureFields.style.display = isAzure ? 'block' : 'none';
+  openaiFields.style.display = isAzure ? 'none' : 'block';
+});
+
+document.getElementById('copy-btn').addEventListener('click', async () => {
+  await navigator.clipboard.writeText(apiKeyValue.textContent);
+});
+
+async function loadOrganizations() {
+  const res = await fetch('/api/v1/organizations');
+  const orgs = await res.json();
+  const rows = orgs.map(o => `
+    <tr>
+      <td>${escapeHtml(o.name)}</td>
+      <td>${escapeHtml(o.email)}</td>
+      <td><span class="pill">${o.telephonyProvider}</span></td>
+      <td><span class="pill">${o.aiProvider}</span></td>
+      <td>${o.status}</td>
+      <td>${new Date(o.createdAt).toLocaleString()}</td>
+      <td><button type="button" class="bundle-btn" data-org-id="${o.id}" data-org-name="${escapeHtml(o.name)}">Get Postman Bundle</button></td>
+    </tr>`).join('');
+  document.getElementById('org-rows').innerHTML = rows || '<tr><td colspan="7">No organizations yet.</td></tr>';
+
+  document.querySelectorAll('.bundle-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleGetBundle(btn.dataset.orgId, btn.dataset.orgName));
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+let lastApiKey = null;
+let lastOrgId = null;
+
+const ENDPOINTS = [
+  { method: 'POST', path: '/api/v1/organizations', auth: false, note: 'Create an organization (onboarding).',
+    body: {
+      name: 'Acme Dental', email: 'ops@acmedental.com',
+      telephonyProvider: 'twilio',
+      telephonyCredentials: { accountSid: 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', authToken: 'your_twilio_auth_token', fromNumber: '+14155550123' },
+      aiProvider: 'azure_openai',
+      aiCredentials: { endpoint: 'https://your-resource.cognitiveservices.azure.com', apiKey: 'your_azure_openai_key', deployment: 'gpt-4.1', apiVersion: '2025-01-01-preview' },
+    } },
+  { method: 'GET', path: '/api/v1/organizations', auth: false, note: 'List organizations.' },
+  { method: 'GET', path: '/api/v1/organizations/{organizationId}', auth: false, note: 'Get one organization.' },
+  { method: 'POST', path: '/api/v1/organizations/{organizationId}/rotate-key', auth: false, note: "Revoke the org's current key, issue a new one." },
+  { method: 'POST', path: '/api/v1/calls', auth: true, note: 'Trigger an outbound AI call. Also send Idempotency-Key header.',
+    body: {
+      toNumber: '+15551234567', maxConversationDurationMinutes: 10,
+      callScript: {
+        persona: 'You are Ava, a scheduling assistant for Acme Dental.',
+        objective: 'Confirm the patient upcoming appointment and reschedule if needed.',
+        consentLine: 'This call may be recorded and is conducted by an AI assistant. Do you consent to continue?',
+        fields: [{ name: 'confirmed', type: 'boolean', description: 'Whether the patient confirms the appointment' }],
+        closingLine: 'Thanks for your time, have a great day!',
+      },
+      metadata: { externalRef: 'appt-8823' },
+    } },
+  { method: 'GET', path: '/api/v1/calls', auth: true, note: 'List calls for your organization.' },
+  { method: 'GET', path: '/api/v1/calls/{callId}', auth: true, note: 'Get call status.' },
+  { method: 'GET', path: '/api/v1/calls/{callId}/events', auth: true, note: 'Full lifecycle event log for a call.' },
+  { method: 'GET', path: '/api/v1/calls/{callId}/conversation', auth: true, note: 'Turn-by-turn transcript.' },
+  { method: 'GET', path: '/api/v1/calls/{callId}/summary', auth: true, note: 'AI-generated summary + extracted fields.' },
+  { method: 'POST', path: '/api/v1/calls/{callId}/cancel', auth: true, note: 'Cancel a queued or in-progress call.', body: { graceful: true } },
+];
+
+function buildCurl(endpoint) {
+  const origin = window.location.origin;
+  const key = lastApiKey || '<API_KEY>';
+  const orgId = lastOrgId || '<organizationId>';
+  const path = endpoint.path.replace('{organizationId}', orgId).replace('{callId}', '<callId>');
+  const lines = [`curl -X ${endpoint.method} ${origin}${path} \\`, `  -H "Content-Type: application/json"`];
+  if (endpoint.auth) lines.push(` \\\n  -H "X-API-Key: ${key}"`);
+  if (endpoint.path === '/api/v1/calls' && endpoint.method === 'POST') lines.push(` \\\n  -H "Idempotency-Key: <your-idempotency-key>"`);
+  if (endpoint.body) lines.push(` \\\n  -d '${JSON.stringify(endpoint.body, null, 2)}'`);
+  return lines.join('');
+}
+
+function renderEndpoints() {
+  const hint = document.getElementById('api-hint');
+  if (lastApiKey) {
+    hint.textContent = `Filled in with the API key from the last organization you created (${lastOrgId}).`;
+    hint.classList.add('live');
+  } else {
+    hint.textContent = 'Create an organization above to auto-fill these curl examples with a real API key. Until then they show a placeholder.';
+    hint.classList.remove('live');
+  }
+
+  const html = ENDPOINTS.map((ep, i) => `
+    <div class="endpoint">
+      <div class="endpoint-head">
+        <span class="method ${ep.method.toLowerCase()}">${ep.method}</span>
+        <span class="endpoint-path">${escapeHtml(ep.path)}</span>
+        <span class="auth-note">${ep.auth ? 'requires X-API-Key' : 'no auth'}</span>
+      </div>
+      <div class="endpoint-note">${escapeHtml(ep.note)}</div>
+      <pre class="curl" id="curl-${i}">${escapeHtml(buildCurl(ep))}</pre>
+      <button type="button" class="copy-btn" data-target="curl-${i}">Copy curl</button>
+    </div>`).join('');
+  document.getElementById('endpoints').innerHTML = html;
+
+  document.querySelectorAll('#endpoints .copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = document.getElementById(btn.dataset.target).textContent;
+      await navigator.clipboard.writeText(text);
+      const original = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = original; }, 1200);
+    });
+  });
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  formError.style.display = 'none';
+  submitBtn.disabled = true;
+  const data = new FormData(form);
+
+  const aiProvider = data.get('aiProvider');
+  const aiCredentials = aiProvider === 'azure_openai'
+    ? { endpoint: data.get('az_endpoint'), apiKey: data.get('az_apiKey'), deployment: data.get('az_deployment'), apiVersion: data.get('az_apiVersion') }
+    : { apiKey: data.get('oa_apiKey'), model: data.get('oa_model') };
+
+  const payload = {
+    name: data.get('name'),
+    email: data.get('email'),
+    telephonyProvider: data.get('telephonyProvider'),
+    telephonyCredentials: {
+      accountSid: data.get('tw_accountSid'),
+      authToken: data.get('tw_authToken'),
+      fromNumber: data.get('tw_fromNumber'),
+    },
+    aiProvider,
+    aiCredentials,
+  };
+
+  try {
+    const res = await fetch('/api/v1/organizations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail ? JSON.stringify(err.detail) : `Request failed (${res.status})`);
+    }
+    const org = await res.json();
+    apiKeyValue.textContent = org.apiKey;
+    resultBox.classList.add('show');
+    lastApiKey = org.apiKey;
+    lastOrgId = org.id;
+    localStorage.setItem('callAgentApiKey', org.apiKey);
+    renderEndpoints();
+    form.reset();
+    aiProviderSelect.dispatchEvent(new Event('change'));
+    loadOrganizations();
+  } catch (err) {
+    formError.textContent = err.message;
+    formError.style.display = 'block';
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+function buildPostmanCollection(orgId, orgName, apiKey) {
+  const origin = window.location.origin;
+  const items = ENDPOINTS
+    .filter(ep => !(ep.path === '/api/v1/organizations' && (ep.method === 'GET' || ep.method === 'POST')))
+    .map(ep => {
+      const path = ep.path.replace('{organizationId}', orgId).replace('{callId}', '{{callId}}');
+      const header = [{ key: 'Content-Type', value: 'application/json' }];
+      if (ep.auth) header.push({ key: 'X-API-Key', value: '{{apiKey}}' });
+      if (ep.path === '/api/v1/calls' && ep.method === 'POST') header.push({ key: 'Idempotency-Key', value: '{{$guid}}' });
+
+      const item = {
+        name: `${ep.method} ${ep.path}`,
+        request: {
+          method: ep.method,
+          header,
+          url: { raw: `{{baseUrl}}${path}`, host: ['{{baseUrl}}'], path: path.split('/').filter(Boolean) },
+        },
+      };
+      if (ep.body) {
+        item.request.body = { mode: 'raw', raw: JSON.stringify(ep.body, null, 2), options: { raw: { language: 'json' } } };
+      }
+      if (ep.path === '/api/v1/calls' && ep.method === 'POST') {
+        // Auto-captures the new call's id so every other request in the
+        // collection can use {{callId}} immediately — no manual copy/paste.
+        item.event = [{
+          listen: 'test',
+          script: { type: 'text/javascript', exec: [
+            'if (pm.response.code === 202) {',
+            '  pm.collectionVariables.set("callId", pm.response.json().id);',
+            '}',
+          ] },
+        }];
+      }
+      return item;
+    });
+
+  return {
+    info: {
+      name: `${orgName} — Call Agent API`,
+      _postman_id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+      schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
+    },
+    variable: [
+      { key: 'baseUrl', value: origin },
+      { key: 'apiKey', value: apiKey },
+      { key: 'callId', value: '' },
+    ],
+    item: items,
+  };
+}
+
+function downloadJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function handleGetBundle(orgId, orgName) {
+  let apiKey;
+
+  if (orgId === lastOrgId && lastApiKey) {
+    apiKey = lastApiKey;
+  } else {
+    const confirmed = confirm(
+      `The API key for "${orgName}" was only shown once, right after creation, and can't be retrieved now.\n\n` +
+      `To build a Postman bundle for it, I need to rotate its key — this immediately invalidates the current key ` +
+      `(anything already using it will start getting 401s).\n\nRotate and continue?`
+    );
+    if (!confirmed) return;
+
+    const res = await fetch(`/api/v1/organizations/${orgId}/rotate-key`, { method: 'POST' });
+    if (!res.ok) {
+      alert('Failed to rotate key.');
+      return;
+    }
+    const data = await res.json();
+    apiKey = data.apiKey;
+    lastApiKey = apiKey;
+    lastOrgId = orgId;
+    renderEndpoints();
+    alert(`New API key issued for "${orgName}" (old key is now revoked). It's included in the downloaded bundle, and filled into the API Reference section above.`);
+  }
+
+  const filename = `${orgName.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-call-agent.postman_collection.json`;
+  downloadJson(filename, buildPostmanCollection(orgId, orgName, apiKey));
+}
+
+loadOrganizations();
+renderEndpoints();
+</script>
+</body>
+</html>

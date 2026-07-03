@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Call Agent Test Console</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --border: #2a2e38; --text: #e6e8ec;
+    --muted: #9aa1ac; --accent: #5b8cff; --danger: #ff6b6b; --ok: #35d07f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .sub { color: var(--muted); margin-bottom: 28px; font-size: 14px; }
+  a { color: var(--accent); text-decoration: none; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; margin-bottom: 24px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 14px 0 4px; }
+  input, select, textarea {
+    width: 100%; padding: 9px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: #0f1115; color: var(--text); font-size: 14px; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); }
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+  button {
+    background: var(--accent); color: #fff; border: none;
+    padding: 9px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.secondary { background: #23262f; }
+  button.danger { background: var(--danger); }
+  .field-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+  .field-row input { flex: 1; }
+  .field-row select { width: 110px; flex: none; }
+  .field-row button { padding: 9px 10px; flex: none; }
+  .status-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .status-pill.active { background: rgba(91,140,255,0.18); color: #7fa4ff; }
+  .status-pill.ok { background: rgba(53,208,127,0.18); color: var(--ok); }
+  .status-pill.bad { background: rgba(255,107,107,0.18); color: var(--danger); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover { background: rgba(255,255,255,0.03); }
+  .error { color: var(--danger); font-size: 13px; margin-top: 12px; display: none; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .tabs { display: flex; gap: 6px; margin: 14px 0 10px; }
+  .tab-btn { background: #23262f; padding: 6px 12px; font-size: 12px; }
+  .tab-btn.active { background: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .transcript-turn { padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 13px; }
+  .transcript-turn.ai { background: rgba(91,140,255,0.1); }
+  .transcript-turn.callee { background: rgba(255,255,255,0.04); }
+  .transcript-turn .speaker { font-size: 11px; color: var(--muted); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+  pre.json { background: #0f1115; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 12px; overflow-x: auto; margin: 0 0 6px; }
+  .empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
+  .key-masked { font-family: ui-monospace, monospace; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Call Agent Test Console</h1>
+  <div class="sub"><a href="/">&larr; Back to onboarding</a></div>
+
+  <div class="card" id="key-card">
+    <h2>API Key</h2>
+    <div id="key-display" style="display:none">
+      Using key <span class="key-masked" id="key-masked"></span>
+      <button type="button" class="secondary" id="change-key-btn" style="margin-left:8px">Change</button>
+    </div>
+    <div id="key-entry">
+      <label>Paste your organization's X-API-Key</label>
+      <input id="api-key-input" placeholder="cak_..." />
+      <button type="button" id="save-key-btn" style="margin-top:12px">Save</button>
+      <div class="hint">Stored only in this browser (localStorage) — never sent anywhere but this API.</div>
+    </div>
+    <div class="error" id="key-error"></div>
+  </div>
+
+  <div class="card" id="create-card" style="display:none">
+    <h2>New Call</h2>
+    <form id="create-call-form">
+      <div class="row">
+        <div><label>To number (E.164)</label><input name="toNumber" required placeholder="+15551234567" /></div>
+        <div><label>Max conversation duration (minutes)</label><input name="maxDuration" type="number" min="1" max="60" value="10" required /></div>
+      </div>
+
+      <label>Persona</label>
+      <input name="persona" required placeholder="You are Ava, a scheduling assistant for Acme Dental." />
+
+      <label>Objective</label>
+      <input name="objective" required placeholder="Confirm the patient's upcoming appointment and reschedule if needed." />
+
+      <label>Consent line</label>
+      <input name="consentLine" placeholder="This call may be recorded and is conducted by an AI assistant. Do you consent to continue?" />
+
+      <label>Closing line</label>
+      <input name="closingLine" placeholder="Thanks for your time, have a great day!" />
+
+      <label>Fields to capture</label>
+      <div id="fields-container"></div>
+      <button type="button" class="secondary" id="add-field-btn">+ Add field</button>
+
+      <div><button type="submit" id="create-call-btn" style="margin-top:18px">Create Call</button></div>
+      <div class="error" id="create-error"></div>
+    </form>
+  </div>
+
+  <div class="card" id="calls-card" style="display:none">
+    <h2>Calls <button type="button" class="secondary" id="refresh-calls-btn" style="margin-left:auto">Refresh</button></h2>
+    <table>
+      <thead><tr><th>To</th><th>Status</th><th>Consent</th><th>End reason</th><th>Created</th></tr></thead>
+      <tbody id="calls-rows"></tbody>
+    </table>
+  </div>
+
+  <div class="card" id="detail-card" style="display:none">
+    <h2 id="detail-title">Call detail <button type="button" class="danger" id="cancel-call-btn" style="margin-left:auto">Cancel call</button></h2>
+    <div id="detail-summary-line" class="hint"></div>
+    <div class="tabs">
+      <button type="button" class="tab-btn active" data-tab="events">Events</button>
+      <button type="button" class="tab-btn" data-tab="conversation">Conversation</button>
+      <button type="button" class="tab-btn" data-tab="summary">Summary</button>
+    </div>
+    <div class="tab-panel active" id="tab-events"></div>
+    <div class="tab-panel" id="tab-conversation"></div>
+    <div class="tab-panel" id="tab-summary"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'callAgentApiKey';
+let apiKey = localStorage.getItem(STORAGE_KEY) || '';
+let selectedCallId = null;
+let pollHandle = null;
+
+const keyDisplay = document.getElementById('key-display');
+const keyEntry = document.getElementById('key-entry');
+const keyMasked = document.getElementById('key-masked');
+const keyError = document.getElementById('key-error');
+
+function maskKey(k) {
+  return k.length > 12 ? `${k.slice(0, 8)}...${k.slice(-4)}` : k;
+}
+
+function showAuthedUI(show) {
+  document.getElementById('create-card').style.display = show ? 'block' : 'none';
+  document.getElementById('calls-card').style.display = show ? 'block' : 'none';
+}
+
+function applyKeyUI() {
+  if (apiKey) {
+    keyDisplay.style.display = 'block';
+    keyEntry.style.display = 'none';
+    keyMasked.textContent = maskKey(apiKey);
+    showAuthedUI(true);
+  } else {
+    keyDisplay.style.display = 'none';
+    keyEntry.style.display = 'block';
+    showAuthedUI(false);
+  }
+}
+
+document.getElementById('save-key-btn').addEventListener('click', async () => {
+  const value = document.getElementById('api-key-input').value.trim();
+  if (!value) return;
+  keyError.style.display = 'none';
+  const res = await fetch('/api/v1/calls', { headers: { 'X-API-Key': value } });
+  if (!res.ok) {
+    keyError.textContent = 'That key was rejected (401). Check it and try again.';
+    keyError.style.display = 'block';
+    return;
+  }
+  apiKey = value;
+  localStorage.setItem(STORAGE_KEY, apiKey);
+  applyKeyUI();
+  loadCalls();
+});
+
+document.getElementById('change-key-btn').addEventListener('click', () => {
+  apiKey = '';
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('api-key-input').value = '';
+  clearInterval(pollHandle);
+  applyKeyUI();
+});
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function statusClass(status) {
+  if (['COMPLETED'].includes(status)) return 'ok';
+  if (['FAILED', 'BUSY', 'NO_ANSWER', 'DISCONNECTED', 'TIMEOUT', 'CANCELLED', 'CALL_BLOCKED', 'CONSENT_DENIED'].includes(status)) return 'bad';
+  return 'active';
+}
+
+// ---- Dynamic "fields to capture" rows ----
+function addFieldRow(name = '', type = 'string', description = '') {
+  const container = document.getElementById('fields-container');
+  const row = document.createElement('div');
+  row.className = 'field-row';
+  row.innerHTML = `
+    <input class="f-name" placeholder="fieldName" value="${escapeHtml(name)}" />
+    <select class="f-type">
+      ${['string','boolean','number','date'].map(t => `<option value="${t}" ${t===type?'selected':''}>${t}</option>`).join('')}
+    </select>
+    <input class="f-desc" placeholder="What should the AI capture here?" value="${escapeHtml(description)}" />
+    <button type="button" class="secondary remove-field">&times;</button>
+  `;
+  row.querySelector('.remove-field').addEventListener('click', () => row.remove());
+  container.appendChild(row);
+}
+document.getElementById('add-field-btn').addEventListener('click', () => addFieldRow());
+addFieldRow('confirmed', 'boolean', 'Whether the callee confirms the appointment');
+
+// ---- Create call ----
+document.getElementById('create-call-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const createError = document.getElementById('create-error');
+  createError.style.display = 'none';
+  const btn = document.getElementById('create-call-btn');
+  btn.disabled = true;
+
+  const fields = Array.from(document.querySelectorAll('#fields-container .field-row')).map(row => ({
+    name: row.querySelector('.f-name').value.trim(),
+    type: row.querySelector('.f-type').value,
+    description: row.querySelector('.f-desc').value.trim(),
+  })).filter(f => f.name && f.description);
+
+  const payload = {
+    toNumber: form.toNumber.value.trim(),
+    maxConversationDurationMinutes: parseInt(form.maxDuration.value, 10),
+    callScript: {
+      persona: form.persona.value.trim(),
+      objective: form.objective.value.trim(),
+      ...(form.consentLine.value.trim() ? { consentLine: form.consentLine.value.trim() } : {}),
+      ...(form.closingLine.value.trim() ? { closingLine: form.closingLine.value.trim() } : {}),
+      fields,
+    },
+  };
+
+  try {
+    const res = await fetch('/api/v1/calls', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey,
+        'Idempotency-Key': (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail ? JSON.stringify(err.detail) : `Request failed (${res.status})`);
+    }
+    const call = await res.json();
+    await loadCalls();
+    selectCall(call.id);
+  } catch (err) {
+    createError.textContent = err.message;
+    createError.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ---- Calls list ----
+async function loadCalls() {
+  const res = await fetch('/api/v1/calls?limit=50', { headers: { 'X-API-Key': apiKey } });
+  if (!res.ok) return;
+  const data = await res.json();
+  const rows = data.items.map(c => `
+    <tr class="clickable" data-call-id="${c.id}">
+      <td>${escapeHtml(c.toNumber)}</td>
+      <td><span class="status-pill ${statusClass(c.status)}">${c.status}</span></td>
+      <td>${c.consentStatus || '—'}</td>
+      <td>${c.endReason || '—'}</td>
+      <td>${new Date(c.createdAt).toLocaleString()}</td>
+    </tr>`).join('');
+  document.getElementById('calls-rows').innerHTML = rows || '<tr><td colspan="5" class="empty">No calls yet — create one above.</td></tr>';
+  document.querySelectorAll('#calls-rows tr.clickable').forEach(tr => {
+    tr.addEventListener('click', () => selectCall(tr.dataset.callId));
+  });
+}
+document.getElementById('refresh-calls-btn').addEventListener('click', loadCalls);
+
+// ---- Call detail (events / conversation / summary) ----
+function selectCall(callId) {
+  selectedCallId = callId;
+  document.getElementById('detail-card').style.display = 'block';
+  document.getElementById('detail-title').firstChild.textContent = `Call ${callId.slice(0, 8)}… `;
+  loadDetail();
+  clearInterval(pollHandle);
+  pollHandle = setInterval(loadDetail, 4000);
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+  });
+});
+
+document.getElementById('cancel-call-btn').addEventListener('click', async () => {
+  if (!selectedCallId) return;
+  const res = await fetch(`/api/v1/calls/${selectedCallId}/cancel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+    body: JSON.stringify({ graceful: true }),
+  });
+  if (res.ok) { loadDetail(); loadCalls(); }
+});
+
+async function loadDetail() {
+  if (!selectedCallId) return;
+  const headers = { 'X-API-Key': apiKey };
+
+  const callRes = await fetch(`/api/v1/calls/${selectedCallId}`, { headers });
+  if (!callRes.ok) return;
+  const call = await callRes.json();
+  document.getElementById('detail-summary-line').innerHTML =
+    `Status: <span class="status-pill ${statusClass(call.status)}">${call.status}</span> &nbsp; ` +
+    `Extracted fields: <code>${escapeHtml(JSON.stringify(call.extractedFields))}</code>`;
+
+  const terminalStatuses = ['COMPLETED','FAILED','BUSY','NO_ANSWER','DISCONNECTED','TIMEOUT','CANCELLED','CALL_BLOCKED','CONSENT_DENIED'];
+  document.getElementById('cancel-call-btn').style.display = terminalStatuses.includes(call.status) ? 'none' : 'inline-block';
+  if (terminalStatuses.includes(call.status)) { clearInterval(pollHandle); }
+
+  const [eventsRes, convoRes, summaryRes] = await Promise.all([
+    fetch(`/api/v1/calls/${selectedCallId}/events`, { headers }),
+    fetch(`/api/v1/calls/${selectedCallId}/conversation`, { headers }),
+    fetch(`/api/v1/calls/${selectedCallId}/summary`, { headers }),
+  ]);
+
+  const events = eventsRes.ok ? await eventsRes.json() : [];
+  document.getElementById('tab-events').innerHTML = events.length
+    ? events.map(e => `<pre class="json">${new Date(e.createdAt).toLocaleTimeString()}  <b>${escapeHtml(e.eventType)}</b>  ${escapeHtml(JSON.stringify(e.payload))}</pre>`).join('')
+    : '<div class="empty">No events yet.</div>';
+
+  const turns = convoRes.ok ? await convoRes.json() : [];
+  document.getElementById('tab-conversation').innerHTML = turns.length
+    ? turns.map(t => `<div class="transcript-turn ${t.speaker}"><div class="speaker">${t.speaker}</div>${escapeHtml(t.text)}</div>`).join('')
+    : '<div class="empty">No conversation yet.</div>';
+
+  const summary = summaryRes.ok ? await summaryRes.json() : null;
+  document.getElementById('tab-summary').innerHTML = summary
+    ? `<p>${escapeHtml(summary.summaryText)}</p><pre class="json">${escapeHtml(JSON.stringify(summary.extractedFields, null, 2))}</pre>`
+    : '<div class="empty">No summary yet — generated when the call completes.</div>';
+}
+
+applyKeyUI();
+if (apiKey) loadCalls();
+</script>
+</body>
+</html>
